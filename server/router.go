@@ -51,6 +51,8 @@ func NewRouter() *gin.Engine {
 			// public routes
 			v69.POST("/whatsupdoc", public.Status)
 			v69.POST("/bringiton", public.Init)
+			v69.POST("/answer", public.Answer)
+			v69.POST("/takehint", public.Hint)
 		}
 	}
 	return router

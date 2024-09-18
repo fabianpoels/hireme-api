@@ -34,6 +34,10 @@ func getPage(pageType string) (pages.Page, error) {
 		return &pages.ZeroPage{}, nil
 	case "info":
 		return &pages.InfoPage{}, nil
+	case "email":
+		return &pages.EmailPage{}, nil
+	case "otp":
+		return &pages.OtpPage{}, nil
 	default:
 		return nil, fmt.Errorf("unknown page type: %s", pageType)
 	}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"hireme-api/db"
 	"hireme-api/models"
+	"log"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -12,9 +13,7 @@ import (
 )
 
 type Page interface {
-	// PreAnswerHook(*gin.Context) error
 	ProvideAnswer(string, models.Participant, *gin.Context) (bool, error)
-	// PostAnswerHook(*gin.Context) error
 }
 
 func EnsurePage(c *gin.Context, participant models.Participant, pageKey string) error {
@@ -32,11 +31,7 @@ func EnsurePage(c *gin.Context, participant models.Participant, pageKey string) 
 		"pages": nil,
 	}
 
-	_, err := models.GetParticipantCollection(*mongoClient).UpdateOne(
-		c,
-		initFilter,
-		initUpdate,
-	)
+	_, err := models.GetParticipantCollection(*mongoClient).UpdateOne(c, initFilter, initUpdate)
 	if err != nil {
 		return fmt.Errorf("failed to initialize pages: %v", err)
 	}
@@ -52,17 +47,12 @@ func EnsurePage(c *gin.Context, participant models.Participant, pageKey string) 
 	}
 
 	// Perform the update
-	opts := options.Update().SetUpsert(true)
+	opts := options.Update().SetUpsert(false)
 	_, err = models.GetParticipantCollection(*mongoClient).UpdateOne(
 		c,
 		bson.M{
-			"_id": participant.Id,
-			"$or": []bson.M{
-				{"pages": bson.M{"$exists": false}},
-				{"pages": nil},
-				{"pages." + pageKey: bson.M{"$exists": false}},
-				{"pages." + pageKey: nil},
-			},
+			"_id":              participant.Id,
+			"pages." + pageKey: bson.M{"$exists": false},
 		},
 		update,
 		opts,
@@ -71,5 +61,52 @@ func EnsurePage(c *gin.Context, participant models.Participant, pageKey string) 
 	if err != nil {
 		return fmt.Errorf("failed to ensure page %s: %v", pageKey, err)
 	}
+	return nil
+}
+
+func WrongGuess(c *gin.Context, participant models.Participant, pageKey string, answer string) error {
+	mongoClient := db.GetDbClient()
+
+	update := bson.M{
+		"$push": bson.M{
+			"pages." + pageKey + ".guesses": answer,
+		},
+		"$set": bson.M{
+			"score":     participant.Score - 10,
+			"updatedAt": time.Now(),
+		},
+	}
+	opts := options.Update().SetUpsert(true)
+	_, err := models.GetParticipantCollection(*mongoClient).UpdateOne(c, bson.M{"_id": participant.Id}, update, opts)
+
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	return nil
+}
+
+func CorrectAnswer(c *gin.Context, participant models.Participant, pageKey string, answer string, nextPage string) error {
+	mongoClient := db.GetDbClient()
+
+	update := bson.M{
+		"$push": bson.M{
+			"pages." + pageKey + ".guesses": answer,
+		},
+		"$set": bson.M{
+			"page":      nextPage,
+			"score":     participant.Score - 1,
+			"updatedAt": time.Now(),
+		},
+	}
+	opts := options.Update().SetUpsert(true)
+	_, err := models.GetParticipantCollection(*mongoClient).UpdateOne(c, bson.M{"_id": participant.Id}, update, opts)
+
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
 	return nil
 }

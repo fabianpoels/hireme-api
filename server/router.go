@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"hireme-api/config"
 	"hireme-api/controllers"
+	"hireme-api/middleware"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -43,16 +44,20 @@ func NewRouter() *gin.Engine {
 	router.Use(cors.New(corsConfig))
 
 	public := new(controllers.PublicController)
+	hint := new(controllers.HintController)
 
 	api := router.Group("api")
 	{
 		v69 := api.Group("v69")
 		{
-			// public routes
-			v69.POST("/whatsupdoc", public.Status)
 			v69.POST("/bringiton", public.Init)
-			v69.POST("/answer", public.Answer)
-			v69.POST("/takehint", public.Hint)
+			v69.Use(middleware.LoadSession())
+			{
+				v69.POST("/whatsupdoc", public.Status)
+				v69.POST("/answer", public.Answer)
+				v69.POST("/hints", hint.GetHints)
+				v69.POST("/takehint", hint.Hint)
+			}
 		}
 	}
 	return router

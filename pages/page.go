@@ -14,6 +14,22 @@ import (
 
 type Page interface {
 	ProvideAnswer(string, models.Participant, *gin.Context) (bool, error)
+	// GetHint(models.Participant) (string, error)
+}
+
+func GetPage(pageType string) (Page, error) {
+	switch pageType {
+	case "zero":
+		return &ZeroPage{}, nil
+	case "info":
+		return &InfoPage{}, nil
+	case "email":
+		return &EmailPage{}, nil
+	case "otp":
+		return &OtpPage{}, nil
+	default:
+		return nil, fmt.Errorf("unknown page type: %s", pageType)
+	}
 }
 
 func EnsurePage(c *gin.Context, participant models.Participant, pageKey string) error {

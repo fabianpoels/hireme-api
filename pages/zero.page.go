@@ -31,3 +31,9 @@ func (z *ZeroPage) ProvideAnswer(answer string, participant models.Participant, 
 
 	return valid, nil
 }
+
+func (z *ZeroPage) GetHintsForPage(page models.Page) (hr HintsResponse, err error) {
+	hr.Hints = []string{}
+	hr.HasHintsLeft = false
+	return hr, nil
+}

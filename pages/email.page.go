@@ -79,7 +79,7 @@ func generateRandomNumber() (string, error) {
 type EmailPage struct {
 }
 
-func (z *EmailPage) ProvideAnswer(answer string, participant models.Participant, c *gin.Context) (valid bool, err error) {
+func (e *EmailPage) ProvideAnswer(answer string, participant models.Participant, c *gin.Context) (valid bool, err error) {
 	// create the page in the db if it doesn't exist
 	err = EnsurePage(c, participant, "email")
 	if err != nil {
@@ -117,4 +117,10 @@ func (z *EmailPage) ProvideAnswer(answer string, participant models.Participant,
 	}
 
 	return valid, nil
+}
+
+func (e *EmailPage) GetHintsForPage(page models.Page) (hr HintsResponse, err error) {
+	hr.Hints = []string{}
+	hr.HasHintsLeft = false
+	return hr, nil
 }

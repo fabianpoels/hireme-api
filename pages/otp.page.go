@@ -40,3 +40,9 @@ func (z *OtpPage) ProvideAnswer(answer string, participant models.Participant, c
 
 	return valid, nil
 }
+
+func (o *OtpPage) GetHintsForPage(page models.Page) (hr HintsResponse, err error) {
+	hr.Hints = []string{}
+	hr.HasHintsLeft = false
+	return hr, nil
+}

@@ -14,7 +14,13 @@ import (
 
 type Page interface {
 	ProvideAnswer(string, models.Participant, *gin.Context) (bool, error)
-	// GetHint(models.Participant) (string, error)
+	GetHintsForPage(models.Page) (HintsResponse, error)
+	// GetNewHint(models.Participant) (string, error)
+}
+
+type HintsResponse struct {
+	Hints        []string `json:"hints"`
+	HasHintsLeft bool     `json:"hasHintsLeft"`
 }
 
 func GetPage(pageType string) (Page, error) {
@@ -92,7 +98,7 @@ func WrongGuess(c *gin.Context, participant models.Participant, pageKey string, 
 			"updatedAt": time.Now(),
 		},
 	}
-	opts := options.Update().SetUpsert(true)
+	opts := options.Update().SetUpsert(false)
 	_, err := models.GetParticipantCollection(*mongoClient).UpdateOne(c, bson.M{"_id": participant.Id}, update, opts)
 
 	if err != nil {
@@ -116,7 +122,7 @@ func CorrectAnswer(c *gin.Context, participant models.Participant, pageKey strin
 			"updatedAt": time.Now(),
 		},
 	}
-	opts := options.Update().SetUpsert(true)
+	opts := options.Update().SetUpsert(false)
 	_, err := models.GetParticipantCollection(*mongoClient).UpdateOne(c, bson.M{"_id": participant.Id}, update, opts)
 
 	if err != nil {

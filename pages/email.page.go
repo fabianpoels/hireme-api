@@ -2,6 +2,7 @@ package pages
 
 import (
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"hireme-api/db"
 	"hireme-api/models"
@@ -120,7 +121,15 @@ func (e *EmailPage) ProvideAnswer(answer string, participant models.Participant,
 }
 
 func (e *EmailPage) GetHintsForPage(page models.Page) (hr HintsResponse, err error) {
-	hr.Hints = []string{}
-	hr.HasHintsLeft = false
+	hints := []string{
+		"Electronic mail (email or e-mail) is a method of transmitting and receiving messages using electronic devices. It was conceived in the late–20th century as the digital version of, or counterpart to, mail (hence e- + mail). Email is a ubiquitous and very widely used communication medium; in current use, an email address is often treated as a basic and necessary part of many processes in business, commerce, government, education, entertainment, and other spheres of daily life in most countries.",
+	}
+
+	if page.Hints < 0 || page.Hints > len(hints) {
+		return hr, errors.New("the amount of hints taken does not make any sense")
+	}
+
+	hr.Hints = hints[:page.Hints]
+	hr.HasHintsLeft = page.Hints < len(hints)
 	return hr, nil
 }

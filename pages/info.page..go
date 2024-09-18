@@ -8,10 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var hints = []string{
-	"This is an info page, so you don't need hints to answer it correctly. Anyway, you lost some points now",
-}
-
 type InfoPage struct {
 }
 
@@ -38,6 +34,10 @@ func (i *InfoPage) ProvideAnswer(answer string, participant models.Participant, 
 }
 
 func (i *InfoPage) GetHintsForPage(page models.Page) (hr HintsResponse, err error) {
+	hints := []string{
+		"This is an info page, so you don't need hints to answer it correctly. Anyway, you lost some points now",
+	}
+
 	if page.Hints < 0 || page.Hints > len(hints) {
 		return hr, errors.New("the amount of hints taken does not make any sense")
 	}

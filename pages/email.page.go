@@ -1,13 +1,17 @@
 package pages
 
 import (
+	"bytes"
 	"crypto/rand"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"hireme-api/config"
 	"hireme-api/db"
 	"hireme-api/models"
 	"log"
 	"math/big"
+	"net/http"
 	"regexp"
 	"strings"
 	"sync"
@@ -105,7 +109,7 @@ func (ep *EmailPage) ProvideAnswer(answer string, participant models.Participant
 		randomNumber, err := generateRandomNumber()
 		if err != nil {
 			log.Println(err)
-			return valid, err
+			return false, err
 		}
 
 		err = cacheClient.Set(c, participant.Id.Hex(), randomNumber, 0).Err()
@@ -115,8 +119,12 @@ func (ep *EmailPage) ProvideAnswer(answer string, participant models.Participant
 		}
 
 		log.Printf("OTP set for %s : %s", answer, randomNumber)
-		// TODO
-		// SENT EMAIL
+
+		err = ep.sendEmail(answer, randomNumber, c)
+		if err != nil {
+			log.Println(err)
+			return false, err
+		}
 
 		err = CorrectAnswer(c, participant, ep.Identifier, answer, ep.NextPage)
 	} else {
@@ -145,4 +153,71 @@ func (ep *EmailPage) GetHintsForPage(page models.Page) (hr HintsResponse, err er
 	hr.Hints = hints[:page.Hints]
 	hr.HasHintsLeft = page.Hints < len(hints)
 	return hr, nil
+}
+
+type contact struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+
+type content struct {
+	Subject   string `json:"subject"`
+	Text_body string `json:"text_body"`
+	Html_body string `json:"html_body"`
+}
+
+type body struct {
+	From       contact   `json:"from"`
+	Recipients []contact `json:"recipients"`
+	Content    content   `json:"content"`
+}
+
+func (ep *EmailPage) sendEmail(address string, otp string, c *gin.Context) (err error) {
+	from := contact{
+		Name:  "Fabian",
+		Email: "hireme@email.fabianpoels.com",
+	}
+
+	recipient := contact{
+		Name:  "<forgot-to-insert-name>",
+		Email: address,
+	}
+	recipients := []contact{recipient}
+
+	content := content{
+		Subject:   "E-mail confirmation code",
+		Text_body: "Your e-mail confirmation code for fabianpoels.com/hireme is: " + otp,
+		Html_body: "<h1>E-mail confirmation code for fabianpoels.com/hireme</h1><p>This is your e-mail confirmation code:</p><h2>" + otp + "</h2><p>enjoy</p>",
+	}
+
+	body := body{
+		From:       from,
+		Recipients: recipients,
+		Content:    content,
+	}
+
+	reqBodyBytes := new(bytes.Buffer)
+	json.NewEncoder(reqBodyBytes).Encode(body)
+	req, err := http.NewRequest("POST", config.GetEnv("AHASEND_API_SEND_URL"), reqBodyBytes)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	req.Header.Add("content-type", "application/json")
+	req.Header.Add("X-Api-Key", config.GetEnv("AHASEND_API_KEY"))
+
+	client := &http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	if res.StatusCode != 201 {
+		return errors.New("there was some trouble sending the email")
+	}
+
+	defer res.Body.Close()
+	return nil
 }

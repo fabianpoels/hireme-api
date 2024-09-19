@@ -13,6 +13,7 @@ import (
 	"sync"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 var tempEmailProviders = []string{
@@ -78,16 +79,26 @@ func generateRandomNumber() (string, error) {
 }
 
 type EmailPage struct {
+	Identifier string
+	NextPage   string
 }
 
-func (e *EmailPage) ProvideAnswer(answer string, participant models.Participant, c *gin.Context) (valid bool, err error) {
+func (ep *EmailPage) ProvideAnswer(answer string, participant models.Participant, c *gin.Context) (valid bool, err error) {
 	// create the page in the db if it doesn't exist
-	err = EnsurePage(c, participant, "email")
+	err = EnsurePage(c, participant, ep.Identifier)
 	if err != nil {
 		return valid, err
 	}
 
-	if validateEmail(answer) {
+	mongoClient := db.GetDbClient()
+	filter := bson.M{"email": answer}
+	count, err := models.GetParticipantCollection(*mongoClient).CountDocuments(c, filter)
+	if err != nil {
+		log.Println(err)
+		return valid, err
+	}
+
+	if validateEmail(answer) && count < 1 {
 		cacheClient := db.GetCacheClient()
 		valid = true
 		// generate confirmation code and store in cache
@@ -107,9 +118,9 @@ func (e *EmailPage) ProvideAnswer(answer string, participant models.Participant,
 		// TODO
 		// SENT EMAIL
 
-		err = CorrectAnswer(c, participant, "email", answer, "otp")
+		err = CorrectAnswer(c, participant, ep.Identifier, answer, ep.NextPage)
 	} else {
-		err = WrongGuess(c, participant, "email", answer)
+		err = WrongGuess(c, participant, ep.Identifier, answer)
 	}
 
 	if err != nil {
@@ -120,9 +131,11 @@ func (e *EmailPage) ProvideAnswer(answer string, participant models.Participant,
 	return valid, nil
 }
 
-func (e *EmailPage) GetHintsForPage(page models.Page) (hr HintsResponse, err error) {
+func (ep *EmailPage) GetHintsForPage(page models.Page) (hr HintsResponse, err error) {
 	hints := []string{
 		"Electronic mail (email or e-mail) is a method of transmitting and receiving messages using electronic devices. It was conceived in the late–20th century as the digital version of, or counterpart to, mail (hence e- + mail). Email is a ubiquitous and very widely used communication medium; in current use, an email address is often treated as a basic and necessary part of many processes in business, commerce, government, education, entertainment, and other spheres of daily life in most countries.",
+		"I obviously don't allow these alias e-mails from e.g. Google which include a '+",
+		"... and like I said, you can only use the same address once",
 	}
 
 	if page.Hints < 0 || page.Hints > len(hints) {

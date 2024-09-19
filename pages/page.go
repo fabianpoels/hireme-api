@@ -15,7 +15,6 @@ import (
 type Page interface {
 	ProvideAnswer(string, models.Participant, *gin.Context) (bool, error)
 	GetHintsForPage(models.Page) (HintsResponse, error)
-	// GetNewHint(models.Participant) (string, error)
 }
 
 type HintsResponse struct {
@@ -26,13 +25,31 @@ type HintsResponse struct {
 func GetPage(pageType string) (Page, error) {
 	switch pageType {
 	case "zero":
-		return &ZeroPage{}, nil
+		return &ZeroPage{Identifier: "zero", NextPage: "info"}, nil
 	case "info":
-		return &InfoPage{}, nil
+		return &InfoPage{Identifier: "info", NextPage: "email"}, nil
 	case "email":
-		return &EmailPage{}, nil
+		return &EmailPage{Identifier: "email", NextPage: "otp"}, nil
 	case "otp":
-		return &OtpPage{}, nil
+		return &OtpPage{Identifier: "otp", NextPage: "ping"}, nil
+	case "ping":
+		return &PingPage{Identifier: "ping", NextPage: "console"}, nil
+	case "console":
+		return &ConsolePage{Identifier: "console", NextPage: "username"}, nil
+	case "username":
+		return &UsernamePage{Identifier: "username", NextPage: "button"}, nil
+	case "button":
+		return &ButtonPage{Identifier: "button", NextPage: "teapot"}, nil
+	case "teapot":
+		return &TeapotPage{Identifier: "teapot", NextPage: "cookie"}, nil
+	case "cookie":
+		return &CookiePage{Identifier: "cookie", NextPage: "cookie2"}, nil
+	case "cookie2":
+		return &Cookie2Page{Identifier: "cookie2", NextPage: "qr"}, nil
+	case "qr":
+		return &QrPage{Identifier: "qr", NextPage: "complex"}, nil
+	case "complex":
+		return &ComplexPage{Identifier: "complex", NextPage: "complex"}, nil
 	default:
 		return nil, fmt.Errorf("unknown page type: %s", pageType)
 	}
@@ -94,7 +111,7 @@ func WrongGuess(c *gin.Context, participant models.Participant, pageKey string, 
 			"pages." + pageKey + ".guesses": answer,
 		},
 		"$set": bson.M{
-			"score":     participant.Score - 10,
+			"score":     participant.Score - 25,
 			"updatedAt": time.Now(),
 		},
 	}

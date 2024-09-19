@@ -8,23 +8,23 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type InfoPage struct {
+type PingPage struct {
 	Identifier string
 	NextPage   string
 }
 
-func (ip *InfoPage) ProvideAnswer(answer string, participant models.Participant, c *gin.Context) (valid bool, err error) {
+func (pp *PingPage) ProvideAnswer(answer string, participant models.Participant, c *gin.Context) (valid bool, err error) {
 	// create the page in the db if it doesn't exist
-	err = EnsurePage(c, participant, ip.Identifier)
+	err = EnsurePage(c, participant, pp.Identifier)
 	if err != nil {
 		return valid, err
 	}
 
-	if answer == "i'm still a moron" {
+	if answer == "pong" {
 		valid = true
-		err = CorrectAnswer(c, participant, ip.Identifier, answer, ip.NextPage)
+		err = CorrectAnswer(c, participant, pp.Identifier, answer, pp.NextPage)
 	} else {
-		err = WrongGuess(c, participant, ip.Identifier, answer)
+		err = WrongGuess(c, participant, pp.Identifier, answer)
 	}
 
 	if err != nil {
@@ -35,9 +35,11 @@ func (ip *InfoPage) ProvideAnswer(answer string, participant models.Participant,
 	return valid, nil
 }
 
-func (ip *InfoPage) GetHintsForPage(page models.Page) (hr HintsResponse, err error) {
+func (pp *PingPage) GetHintsForPage(page models.Page) (hr HintsResponse, err error) {
 	hints := []string{
-		"This is an info page, so you don't need hints to answer it correctly. Anyway, you lost some points now",
+		"...",
+		"Ok if you seriously need a hint for this",
+		"pong, maybe?",
 	}
 
 	if page.Hints < 0 || page.Hints > len(hints) {

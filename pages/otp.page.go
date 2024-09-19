@@ -6,14 +6,17 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type OtpPage struct {
+	Identifier string
+	NextPage   string
 }
 
-func (z *OtpPage) ProvideAnswer(answer string, participant models.Participant, c *gin.Context) (valid bool, err error) {
+func (op *OtpPage) ProvideAnswer(answer string, participant models.Participant, c *gin.Context) (valid bool, err error) {
 	// create the page in the db if it doesn't exist
-	err = EnsurePage(c, participant, "otp")
+	err = EnsurePage(c, participant, op.Identifier)
 	if err != nil {
 		return valid, err
 	}
@@ -28,9 +31,20 @@ func (z *OtpPage) ProvideAnswer(answer string, participant models.Participant, c
 	if otp == answer {
 		valid = true
 
-		err = CorrectAnswer(c, participant, "otp", answer, "ping")
+		guesses := participant.Pages["email"].Guesses
+		email := guesses[len(guesses)-1]
+		filter := bson.M{"_id": participant.Id}
+		update := bson.M{"$set": bson.M{"email": email}}
+		mongoClient := db.GetDbClient()
+		_, err := models.GetParticipantCollection(*mongoClient).UpdateOne(c, filter, update)
+		if err != nil {
+			log.Println(err)
+			return false, err
+		}
+
+		err = CorrectAnswer(c, participant, op.Identifier, answer, op.NextPage)
 	} else {
-		err = WrongGuess(c, participant, "otp", answer)
+		err = WrongGuess(c, participant, op.Identifier, answer)
 	}
 
 	if err != nil {
@@ -41,7 +55,7 @@ func (z *OtpPage) ProvideAnswer(answer string, participant models.Participant, c
 	return valid, nil
 }
 
-func (o *OtpPage) GetHintsForPage(page models.Page) (hr HintsResponse, err error) {
+func (op *OtpPage) GetHintsForPage(page models.Page) (hr HintsResponse, err error) {
 	hr.Hints = []string{}
 	hr.HasHintsLeft = false
 	return hr, nil

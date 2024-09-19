@@ -12,6 +12,7 @@ type Participant struct {
 	Id        primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
 	SessionId string             `json:"sessionId" bson:"sessionId"`
 	Email     string             `json:"email" bson:"email"`
+	Username  string             `json:"username" bson:"username"`
 	Page      string             `json:"page" bson:"page"`
 	Score     int                `json:"score" bson:"score"`
 	Pages     map[string]Page    `json:"pages" bson:"pages"`

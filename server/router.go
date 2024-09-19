@@ -20,7 +20,7 @@ func NewRouter() *gin.Engine {
 	// TODO: rework to dynamically configure cors, depending on the env
 	corsConfig := cors.DefaultConfig()
 
-	if config.GetEnv("ENVIRONMENT") == "dev" {
+	if config.GetEnv("ENVIRONMENT") == "development" {
 		// LOCAL DEV CONFIG
 		// domain := config.GetEnv("DOMAIN")
 		router.SetTrustedProxies(nil)
@@ -44,12 +44,15 @@ func NewRouter() *gin.Engine {
 	router.Use(cors.New(corsConfig))
 
 	public := new(controllers.PublicController)
+	teapot := new(controllers.TeapotController)
 	hint := new(controllers.HintController)
 
 	api := router.Group("api")
 	{
 		v69 := api.Group("v69")
 		{
+			v69.GET("/teapot", teapot.Teapot)
+			v69.POST("/teapot", teapot.Teapot)
 			v69.POST("/bringiton", public.Init)
 			v69.Use(middleware.LoadSession())
 			{

@@ -101,10 +101,11 @@ func (h HintController) Hint(c *gin.Context) {
 
 	mongoClient := db.GetDbClient()
 	hints := participant.Pages[participant.Page].Hints + 1
+	penalty := hints * 50
 	update := bson.M{
 		"$set": bson.M{
 			"pages." + participant.Page + ".hints": hints,
-			"score":                                participant.Score - 50,
+			"score":                                participant.Score - penalty,
 			"updatedAt":                            time.Now(),
 		},
 	}

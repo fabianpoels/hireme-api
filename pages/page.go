@@ -49,7 +49,11 @@ func GetPage(pageType string) (Page, error) {
 	case "qr":
 		return &QrPage{Identifier: "qr", NextPage: "complex"}, nil
 	case "complex":
-		return &ComplexPage{Identifier: "complex", NextPage: "complex"}, nil
+		return &ComplexPage{Identifier: "complex", NextPage: "timer"}, nil
+	case "timer":
+		return &TimerPage{Identifier: "timer", NextPage: "score"}, nil
+	case "score":
+		return &ScorePage{Identifier: "score", NextPage: "score"}, nil
 	default:
 		return nil, fmt.Errorf("unknown page type: %s", pageType)
 	}

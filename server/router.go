@@ -46,6 +46,7 @@ func NewRouter() *gin.Engine {
 	public := new(controllers.PublicController)
 	teapot := new(controllers.TeapotController)
 	hint := new(controllers.HintController)
+	score := new(controllers.ScoreController)
 
 	api := router.Group("api")
 	{
@@ -60,6 +61,7 @@ func NewRouter() *gin.Engine {
 				v69.POST("/answer", public.Answer)
 				v69.POST("/hints", hint.GetHints)
 				v69.POST("/takehint", hint.Hint)
+				v69.POST("/scores", score.Scores)
 			}
 		}
 	}

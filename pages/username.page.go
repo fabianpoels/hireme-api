@@ -34,6 +34,16 @@ func (up *UsernamePage) ProvideAnswer(answer string, participant models.Particip
 
 	if startsWithDigit && count < 1 {
 		valid = true
+
+		filter := bson.M{"_id": participant.Id}
+		update := bson.M{"$set": bson.M{"username": answer}}
+		mongoClient := db.GetDbClient()
+		_, err := models.GetParticipantCollection(*mongoClient).UpdateOne(c, filter, update)
+		if err != nil {
+			log.Println(err)
+			return false, err
+		}
+
 		err = CorrectAnswer(c, participant, up.Identifier, answer, up.NextPage)
 	} else {
 		err = WrongGuess(c, participant, up.Identifier, answer)

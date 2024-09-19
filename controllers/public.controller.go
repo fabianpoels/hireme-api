@@ -21,7 +21,7 @@ type PublicController struct {
 }
 
 type AnswerRequest struct {
-	Answer string `json:"answer" binding:"required"`
+	Answer string `json:"answer"`
 }
 
 func (p PublicController) Status(c *gin.Context) {

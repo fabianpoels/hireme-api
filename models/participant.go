@@ -16,7 +16,6 @@ type Participant struct {
 	Page      string             `json:"page" bson:"page"`
 	Score     int                `json:"score" bson:"score"`
 	Pages     map[string]Page    `json:"pages" bson:"pages"`
-	Finished  bool               `json:"finished" bson:"finished"`
 	CreatedAt time.Time          `json:"-" bson:"createdAt,omitempty"`
 	UpdatedAt time.Time          `json:"-" bson:"updatedAt,omitempty"`
 }
